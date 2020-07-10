@@ -1,13 +1,9 @@
-#!/bin/bash
+#!/bin/zsh
 
-#source ~/.secrets
+source ~/.secrets
+source ~/.jwt
 
 MAIN_FOLDER="$HOME/Pictures/Screenshots"
-
-CUSTOM_DOMAIN="dustin.pics"
-
-BUCKET_NAME="gcs.dustin.sh"
-SCREENSHOTS_FOLDER="i"
 
 FULL_DAY=$(date +'%A')
 FULL_MONTH=$(date +'%B')
@@ -24,9 +20,6 @@ YEAR=$(date +'%y')
 FILE_NAME="${HOUR}-${MINUTE}-${SECOND}-${MONTH}-${DAY}-${YEAR}"
 FOLDER_NAME="$FULL_YEAR/$FULL_MONTH/$FULL_DAY"
 
-GCLOUD_PATH="/usr/local/bin/gcloud"
-GSUTIL_PATH="/usr/local/bin/gsutil"
-
 # Make folder(s)
 mkdir -p ${MAIN_FOLDER}/${FOLDER_NAME}
 
@@ -40,22 +33,15 @@ osascript -e 'display notification "'"$FILE_NAME"'" with title "Uploading Screen
 
 # Define file variables for name and base64
 BASE64=$(cat ${MAIN_FOLDER}/${FOLDER_NAME}/${FILE_NAME}.png | base64)
-SHA256=$(echo $BASE64 | openssl sha256)
 
-# Upload and set public
-$GCLOUD_PATH config set pass_credentials_to_gsutil false &> /dev/null
-BOTO_CONFIG=/Users/dustin/.dustin-mac-screenshot-boto $GSUTIL_PATH cp ${MAIN_FOLDER}/${FOLDER_NAME}/${FILE_NAME}.png gs://${BUCKET_NAME}/${SCREENSHOTS_FOLDER}/${SHA256:8:16}.png &> /dev/null
-BOTO_CONFIG=/Users/dustin/.dustin-mac-screenshot-boto $GSUTIL_PATH acl ch -u AllUsers:r gs://${BUCKET_NAME}/${SCREENSHOTS_FOLDER}/${SHA256:8:16}.png &> /dev/null
-$GCLOUD_PATH config unset pass_credentials_to_gsutil &> /dev/null
+# Upload file to custom api
+UPLOAD=$(http --ignore-stdin POST http://127.0.0.1:1300/upload/image authorization:$(jwt dustin.sh/api ${PERSONAL_API_INTERNAL_SECRET} 20) file=\;base64,${BASE64})
 
-FILE_URL="https://${BUCKET_NAME}/${SCREENSHOTS_FOLDER}/${SHA256:8:16}.png"
-# File URL
-if [ ! -z $CUSTOM_DOMAIN ]; then
-	FILE_URL="https://${CUSTOM_DOMAIN}/${SHA256:8:16}.png"
-fi
+# Get file url
+FILE_URL=$(echo $UPLOAD | jq .data | cut -d "\"" -f 2)
 
 # Copy URL to clipboard
-echo $FILE_URL | pbcopy 
+echo $FILE_URL | pbcopy
 
 # Send Upload Notification
 osascript -e 'display notification "'"$FILE_URL"'" with title "Uploaded Screenshot"'

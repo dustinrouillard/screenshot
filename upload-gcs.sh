@@ -5,7 +5,12 @@ source ~/.secrets
 MAIN_FOLDER="$HOME/Pictures/Uploads"
 
 BUCKET_NAME="gcs.dustin.sh"
-UPLOADS_FOLDER="u"
+if [ "$2" = "true" ]; then
+	CUSTOM_DOMAIN="dustin.pics"
+	UPLOADS_FOLDER="i"
+else
+	UPLOADS_FOLDER="u"
+fi
 
 FULL_DAY=$(date +'%A')
 FULL_MONTH=$(date +'%B')
@@ -38,12 +43,16 @@ SHA256=$(echo $BASE64 | openssl sha256)
 
 # Upload and set public
 gcloud config set pass_credentials_to_gsutil false
-BOTO_CONFIG=/Users/byte/.dustin-mac-screenshot-boto gsutil cp ${MAIN_FOLDER}/${FOLDER_NAME}/${FILE_NAME}.${FILE_EXT} gs://${BUCKET_NAME}/${UPLOADS_FOLDER}/${SHA256:8:16}.${FILE_EXT}
-BOTO_CONFIG=/Users/byte/.dustin-mac-screenshot-boto gsutil acl ch -u AllUsers:r gs://${BUCKET_NAME}/${UPLOADS_FOLDER}/${SHA256:8:16}.${FILE_EXT}
+BOTO_CONFIG=/Users/dustin/.dustin-mac-screenshot-boto gsutil cp ${MAIN_FOLDER}/${FOLDER_NAME}/${FILE_NAME}.${FILE_EXT} gs://${BUCKET_NAME}/${UPLOADS_FOLDER}/${SHA256:8:16}.${FILE_EXT}
+BOTO_CONFIG=/Users/dustin/.dustin-mac-screenshot-boto gsutil acl ch -u AllUsers:r gs://${BUCKET_NAME}/${UPLOADS_FOLDER}/${SHA256:8:16}.${FILE_EXT}
 gcloud config unset pass_credentials_to_gsutil
 
 # File URL
 FILE_URL="https://${BUCKET_NAME}/${UPLOADS_FOLDER}/${SHA256:8:16}.${FILE_EXT}"
+# File URL
+if [ ! -z $CUSTOM_DOMAIN ]; then
+	FILE_URL="https://${CUSTOM_DOMAIN}/${SHA256:8:16}.${FILE_EXT}"
+fi
 
 # Copy URL to clipboard
 echo $FILE_URL | pbcopy 
