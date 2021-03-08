@@ -33,11 +33,8 @@ if [ ! -e ${MAIN_FOLDER}/${FOLDER_NAME}/${FILE_NAME}.png ]; then exit 0; fi
 # Send Uploading Notification
 osascript -e 'display notification "'"$FILE_NAME"'" with title "Uploading Screenshot"'
 
-# Define file variables for name and base64
-BASE64=$(cat ${MAIN_FOLDER}/${FOLDER_NAME}/${FILE_NAME}.png | base64)
-
 # Upload file to custom api
-UPLOAD=$(http --ignore-stdin POST ${PERSONAL_API_HOST}/upload/image authorization:$(jwt dustin.sh/api ${PERSONAL_API_INTERNAL_SECRET} 60) file=\;base64,${BASE64})
+UPLOAD=$(http --multipart --ignore-stdin POST ${PERSONAL_API_HOST}/upload/image authorization:$(jwt dustin.sh/api ${PERSONAL_API_INTERNAL_SECRET} 60) file@${MAIN_FOLDER}/${FOLDER_NAME}/${FILE_NAME}.png)
 
 # Get file url
 FILE_URL=$(echo $UPLOAD | jq .data | cut -d "\"" -f 2)
