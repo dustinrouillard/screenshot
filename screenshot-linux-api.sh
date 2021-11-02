@@ -44,4 +44,4 @@ echo $FILE_URL | xsel --input --clipboard
 echo $FILE_URL | xsel
 
 # Send Upload Notification
-notify-send "DCS File Upload" "File uploaded ${FILE_URL}"
+/usr/bin/notify-send "DCS File Upload" "File uploaded ${FILE_URL}"
